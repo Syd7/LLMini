@@ -1,5 +1,7 @@
 import urllib.request
 import re
+from importlib.metadata import version
+import tiktoken
 from SimpleTokenizerV1 import SimpleTokenizerV1
 
 url = ("https://raw.githubusercontent.com/rasbt/"
@@ -44,3 +46,23 @@ print(text)
 
 encoded = tokenizer.encode(text)
 print(tokenizer.decode(encoded))
+
+print("tiktoken version" + version("tiktoken"))
+
+tokenizer = tiktoken.get_encoding("gpt2")
+text = (
+    "Hello, do you like tea? <|endoftext|> In the sunlit terraces "
+     "of someunknownPlace."
+)
+
+integers = tokenizer.encode(text, allowed_special={"<|endoftext|>"})
+print(integers)
+strings = tokenizer.decode(integers)
+print(strings)
+
+#Experimenting with tiktoken's tokenizer and how it works with unknown strings 
+TestingBrokenText = "Akwir ier"
+integer2 = tokenizer.encode(TestingBrokenText, allowed_special={"<|endoftext|>"})
+print(integer2)
+string2 = tokenizer.decode(integer2)
+print(string2)
