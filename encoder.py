@@ -10,59 +10,28 @@ url = ("https://raw.githubusercontent.com/rasbt/"
 
 file_path = "the-verdict.txt"
 urllib.request.urlretrieve(url, file_path)
+tokenizer = tiktoken.get_encoding("gpt2")
 
 
 with open("the-verdict.txt", "r", encoding="utf-8") as f:
     raw_text = f.read()
-print ("Total number of characters:", len(raw_text))
-print(raw_text[:99])
+
+enc_text = tokenizer.encode(raw_text)
+enc_sample = enc_text[50:]
+context_size = 4
+x = enc_sample[:context_size]
+y = enc_sample[1:context_size+1]
+print(f"x: {x}")
+print (f"y: {y}")
+
+#for loop
+
+for i in range (1, context_size+1):
+    context = enc_sample[:i] #get all of the context up to i so it gets bigger and bigger
+    desired = enc_sample[i] #the next element is what we desire, this is what we will use for learning
+    print(context, "---->", desired)
+    print(tokenizer.decode(context), "---->", tokenizer.decode([desired])) #decode is expecting a list of ids, so if we [desired] it will pass a list of one element
+#input-target pairs for LLM Training -^
 
 
-#basic Tokenizer
-preprocessed = re.split(r'([,.:;?_!"()\']|--|\s)', raw_text)
-preprocessed = [item.strip() for item in preprocessed if item.strip()]
-
-#sort all unique tokens
-all_words_sorted = sorted(set(preprocessed))
-vocab_size = len(preprocessed)
-print(vocab_size)
-
-vocab = {token:integer for integer, token in enumerate(all_words_sorted)}
-for i, item in enumerate(vocab.items()):
-    print(item)
-    if i >= 50:
-        break
-
-all_tokens = sorted(list(set(preprocessed)))
-all_tokens.extend(["<|unk|>", "<|endoftext|>"])
-vocab = {token:integer for integer, token in enumerate(all_tokens)}
-
-print(len(vocab.items()))
-tokenizer = SimpleTokenizerV1(vocab)
-text1 = "Hello, do you like tea?"
-text2 = "In the sunlit terraces of the palace."
-text = "<|endoftext|> ".join((text1, text2))
-print(text)
-
-encoded = tokenizer.encode(text)
-print(tokenizer.decode(encoded))
-
-print("tiktoken version" + version("tiktoken"))
-
-tokenizer = tiktoken.get_encoding("gpt2")
-text = (
-    "Hello, do you like tea? <|endoftext|> In the sunlit terraces "
-     "of someunknownPlace."
-)
-
-integers = tokenizer.encode(text, allowed_special={"<|endoftext|>"})
-print(integers)
-strings = tokenizer.decode(integers)
-print(strings)
-
-#Experimenting with tiktoken's tokenizer and how it works with unknown strings 
-TestingBrokenText = "Akwir ier"
-integer2 = tokenizer.encode(TestingBrokenText, allowed_special={"<|endoftext|>"})
-print(integer2)
-string2 = tokenizer.decode(integer2)
-print(string2)
+print(len(enc_text))
