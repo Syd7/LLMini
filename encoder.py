@@ -30,39 +30,29 @@ def create_dataloader_v1(txt, batch_size=4, max_length = 256, stride = 128, shuf
     )
     return dataloader
 
-#test
-dataloader = create_dataloader_v1(raw_text, batch_size=1, max_length=4, stride=1, shuffle=False)
+vocab_size = 50257 #tokens of gpt2 vocab
+output_dim = 256 #embedding dimension 
+token_embedding_layer = torch.nn.Embedding(vocab_size, output_dim) #create token embedding layer
+
+max_length = 4
+dataloader = create_dataloader_v1(raw_text, batch_size=8, max_length=max_length, stride=max_length, shuffle=False)
 data_iter = iter(dataloader)
-first_batch = next(data_iter)
-second_batch = next(data_iter)
-print(first_batch)
-print(second_batch)
-
-#exercise 2.2
-#max_length is just like the number of tokens in a sequence, batch_size is the number of sequences in a batch
-
-dataloader2 = create_dataloader_v1(raw_text, batch_size=8, max_length=4, stride=4, shuffle=False)
-print("max_length:", 4)
-data_iter = iter(dataloader2)
 inputs, targets = next(data_iter)
-print("Inputs:\n", inputs)
-print("Targets:\n", targets)
+print ("Token IDs:\n", inputs)
+print ("\nInputs Shape:\n", inputs.shape)
 
-#now we have to do token embeddings, e.g converting token IDs to embedding vectors. 
-#input text -> tokenized text -> token IDs -> embeddings
-#creating token embeddings
+token_embeddings = token_embedding_layer(inputs) #takes your batch of inputs and looks up their corresponding embeddings
+print(token_embeddings.shape)
 
-input_ids = torch.tensor([2, 3, 5, 1])
-vocab_size = 6 #6 rows
-output_dim = 3 #3length
-
-torch.manual_seed(123)
-embedding_layer = torch.nn.Embedding(vocab_size, output_dim) #six ros for six tokens (vocab_size), 3 columns for output_dim
-print (embedding_layer.weight)
-print(embedding_layer(torch.tensor(3)))  # shows u the 4th row of the embedding matrix, which corresponds to token ID 3 (cuz 0 idex)
-print(embedding_layer(torch.tensor([2, 3, 5, 1])))  # shows the embeddings for all tokens in input_ids
+context_length = max_length
+pos_embedding_layer = torch.nn.Embedding(context_length, output_dim)
+post_embeddings = pos_embedding_layer(torch.arange(context_length))
+print(post_embeddings.shape)
 
 
+input_embeddings = token_embeddings + post_embeddings
+print(input_embeddings.shape)
 
-
+#3 Coding Attention Mechanisms
+#1 Simplified Self-Attention #2 Self-Attention #3 Causal Attention #4 Multi-Head Attention
 
