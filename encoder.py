@@ -1,8 +1,10 @@
 import urllib.request
 import re
+import torch
+from GPTDataSetV1 import GPTDataSetV1
+from torch.utils.data import DataLoader
 from importlib.metadata import version
 import tiktoken
-from SimpleTokenizerV1 import SimpleTokenizerV1
 
 url = ("https://raw.githubusercontent.com/rasbt/"
        "LLMs-from-scratch/main/ch02/01_main-chapter-code/"
@@ -16,22 +18,51 @@ tokenizer = tiktoken.get_encoding("gpt2")
 with open("the-verdict.txt", "r", encoding="utf-8") as f:
     raw_text = f.read()
 
-enc_text = tokenizer.encode(raw_text)
-enc_sample = enc_text[50:]
-context_size = 4
-x = enc_sample[:context_size]
-y = enc_sample[1:context_size+1]
-print(f"x: {x}")
-print (f"y: {y}")
+def create_dataloader_v1(txt, batch_size=4, max_length = 256, stride = 128, shuffle=True, drop_last=True, num_workers=0):
+    tokenizer = tiktoken.get_encoding("gpt2") 
+    dataset = GPTDataSetV1(txt, tokenizer, max_length, stride)
+    dataloader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        drop_last=drop_last, #drops the last batch if it is smaller than batch_size
+        num_workers=num_workers #num_workers is the number of subprocesses to use for data loading, 0 means that the data will be loaded in the main process
+    )
+    return dataloader
 
-#for loop
+#test
+dataloader = create_dataloader_v1(raw_text, batch_size=1, max_length=4, stride=1, shuffle=False)
+data_iter = iter(dataloader)
+first_batch = next(data_iter)
+second_batch = next(data_iter)
+print(first_batch)
+print(second_batch)
 
-for i in range (1, context_size+1):
-    context = enc_sample[:i] #get all of the context up to i so it gets bigger and bigger
-    desired = enc_sample[i] #the next element is what we desire, this is what we will use for learning
-    print(context, "---->", desired)
-    print(tokenizer.decode(context), "---->", tokenizer.decode([desired])) #decode is expecting a list of ids, so if we [desired] it will pass a list of one element
-#input-target pairs for LLM Training -^
+#exercise 2.2
+#max_length is just like the number of tokens in a sequence, batch_size is the number of sequences in a batch
+
+dataloader2 = create_dataloader_v1(raw_text, batch_size=8, max_length=4, stride=4, shuffle=False)
+print("max_length:", 4)
+data_iter = iter(dataloader2)
+inputs, targets = next(data_iter)
+print("Inputs:\n", inputs)
+print("Targets:\n", targets)
+
+#now we have to do token embeddings, e.g converting token IDs to embedding vectors. 
+#input text -> tokenized text -> token IDs -> embeddings
+#creating token embeddings
+
+input_ids = torch.tensor([2, 3, 5, 1])
+vocab_size = 6 #6 rows
+output_dim = 3 #3length
+
+torch.manual_seed(123)
+embedding_layer = torch.nn.Embedding(vocab_size, output_dim) #six ros for six tokens (vocab_size), 3 columns for output_dim
+print (embedding_layer.weight)
+print(embedding_layer(torch.tensor(3)))  # shows u the 4th row of the embedding matrix, which corresponds to token ID 3 (cuz 0 idex)
+print(embedding_layer(torch.tensor([2, 3, 5, 1])))  # shows the embeddings for all tokens in input_ids
 
 
-print(len(enc_text))
+
+
+
