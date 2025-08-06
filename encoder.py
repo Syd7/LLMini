@@ -73,7 +73,7 @@ inputs = torch.tensor(
 )
 
 query = inputs[1]
-attn_scores_2 = torch.empty(inputs.shape[0]) #this will hold the attention scores
+attn_scores_2 = torch.empty(inputs.shape[0]) #this will hold the attention scores since its 0 it'll just be a row
 for i, x_i in enumerate(inputs):
     attn_scores_2[i] = torch.dot(x_i, query) #dot product of query and each input vector
 #Dot Vectors are not only used to convert two vectors into a scalar, but also to measure the similarity between them
@@ -92,5 +92,16 @@ print("Attention Weights (Naive Softmax):", attn_weights_2_naive)
 print("Sum (Naive Softmax):", attn_weights_2_naive.sum()) #alternative way of normalizing attention sore but it may suffer from
 #overflow or underflow
 
+query = inputs[1]
+context_vec_2 = torch.zeros(query.shape)
+for i, x_i in enumerate(inputs):
+    context_vec_2 += attn_weights_2_naive[i] * x_i #multiply each input vector by its corresponding attention weight
+print(context_vec_2)
 
 
+#Now we have to do this with all tokens instead of just one (inputs[1])
+attn_scores = torch.empty(6,6)
+for i, x_i in enumerate(inputs):
+    for j, x_j in enumerate(inputs):
+        attn_scores[i][j] = torch.dot(x_i, x_j) #dot product of each input vector with every other input vector
+print("Attention Scores Matrix:\n", attn_scores)
