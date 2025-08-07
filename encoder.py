@@ -99,9 +99,46 @@ for i, x_i in enumerate(inputs):
 print(context_vec_2)
 
 
-#Now we have to do this with all tokens instead of just one (inputs[1])
-attn_scores = torch.empty(6,6)
-for i, x_i in enumerate(inputs):
-    for j, x_j in enumerate(inputs):
-        attn_scores[i][j] = torch.dot(x_i, x_j) #dot product of each input vector with every other input vector
-print("Attention Scores Matrix:\n", attn_scores)
+attn_scores = inputs @ inputs.T #this is the dot product loop but done with transposition and matrix multiplication 
+print(attn_scores)
+
+#normalize each row
+attn_weights = torch.softmax(attn_scores, dim=1) #softmax is a function that normalizes the attention scores
+print(attn_weights)
+
+#use these attention weights to compute context vector via matrix mutliplication
+all_context_vecs = attn_weights @ inputs #multiply the attention weights by the inputs to get the context vector
+print(all_context_vecs)
+print("Previous 2nd Context Vector:", context_vec_2)
+#implementing self attention with weights
+
+x_2 = inputs[1]
+d_in = inputs.shape[1]
+d_out = 2
+
+torch.manual_seed(123)
+W_query = torch.nn.Parameter(torch.randn(d_in, d_out), requires_grad=False) #query weight matrix
+W_key = torch.nn.Parameter(torch.randn(d_in, d_out), requires_grad=False) #query weight matrix
+W_value = torch.nn.Parameter(torch.randn(d_in, d_out), requires_grad=False) #query weight matrix
+#require_grad is just set to false to reduce clutter, for normal training it should be true
+
+query_2 = x_2 @ W_query #query vector
+key_2 = inputs @ W_key #key vector
+value_2 = inputs @ W_value #value vector
+print(query_2)
+
+keys = inputs @ W_key #key vectors
+values = inputs @ W_value #value vectors
+print("keys.shape:", keys.shape)
+print("values.shape:", values.shape)
+
+keys_2 = keys[1]
+attn_scores_22 = query_2.dot(keys_2)
+print(attn_scores_22)
+
+attn_scores_2 = query_2 @ keys.T
+print(attn_scores_2)
+
+d_k = keys.shape[1]
+attn_weights_2 = torch.softmax(attn_scores_2 / d_k**0.5, dim=-1) #scaled dot product attention
+print(attn_weights_2)
