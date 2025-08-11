@@ -89,8 +89,8 @@ print(torch.dot(inputs[0], query)) #this is the same as the above line
 
 
 attn_weights_2_tmp = attn_scores_2/attn_scores_2.sum() #normalize the attention scores just like in physics
-print("Attention Weights", attn_weights_2_tmp)
-print("Sum: ", attn_weights_2_tmp.sum())
+#print("Attention Weights", attn_weights_2_tmp)
+#print("Sum: ", attn_weights_2_tmp.sum())
 
 # GOOD SO FAR ^^^
 
@@ -98,22 +98,22 @@ print("Sum: ", attn_weights_2_tmp.sum())
 def softmax_naive(x):
     return torch.exp(x) / torch.exp(x).sum(dim=0)
 attn_weights_2 = softmax_naive(attn_scores_2)
-print("Attention Weights Naive:", attn_weights_2)
-print("Sum: ", attn_weights_2.sum())
+#print("Attention Weights Naive:", attn_weights_2)
+#print("Sum: ", attn_weights_2.sum())
 
 query = inputs[1]
 context_vec_2 = torch.zeros(query.shape)
 for i, x_i in enumerate(inputs):
-    context_vec_2 += attn_weights_2_naive[i] * x_i #multiply each input vector by its corresponding attention weight
-print(context_vec_2) #GOOD
+    context_vec_2 += attn_weights_2[i] * x_i #multiply each input vector by its corresponding attention weight
+#print(context_vec_2) #GOOD
 
 
 attn_scores = inputs @ inputs.T #this is the dot product loop but done with transposition and matrix multiplication 
-print(attn_scores) #GOOD
+#print(attn_scores) #GOOD
 
 #normalize each row
 attn_weights = torch.softmax(attn_scores, dim=1) #softmax is a function that normalizes the attention scores
-print(attn_weights) #GOOD
+#print(attn_weights) #GOOD
 
 
 #use these attention weights to compute context vector via matrix mutliplication
@@ -127,15 +127,15 @@ d_in = inputs.shape[1]
 d_out = 2
 
 torch.manual_seed(123)
-W_query = torch.nn.Parameter(torch.randn(d_in, d_out), requires_grad=False) #query weight matrix
-W_key = torch.nn.Parameter(torch.randn(d_in, d_out), requires_grad=False) #query weight matrix
-W_value = torch.nn.Parameter(torch.randn(d_in, d_out), requires_grad=False) #query weight matrix
-#require_grad is just set to false to reduce clutter, for normal training it should be true
 
-query_2 = x_2 @ W_query #query vector
-key_2 = inputs @ W_key #key vector
-value_2 = inputs @ W_value #value vector
-print(query_2)
+W_query = torch.nn.Parameter(torch.rand(d_in, d_out), requires_grad=False)
+W_key   = torch.nn.Parameter(torch.rand(d_in, d_out), requires_grad=False)
+W_value = torch.nn.Parameter(torch.rand(d_in, d_out), requires_grad=False)
+
+query_2 = x_2 @ W_query #
+key_2 = x_2 @ W_key #key vector
+value_2 = x_2 @ W_value #value vector
+#print("QUERY 2", query_2) #good na
 
 keys = inputs @ W_key #key vectors
 values = inputs @ W_value #value vectors
@@ -149,24 +149,15 @@ print(attn_scores_22)
 attn_scores_2 = query_2 @ keys.T
 print(attn_scores_2)
 
-d_k = keys.shape[1]
+d_k = keys.shape[-1]
 attn_weights_2 = torch.softmax(attn_scores_2 / d_k**0.5, dim=-1) #scaled dot product attention
 print(attn_weights_2)
 
+context_vec_2 = attn_weights_2 @ values
+print("Context Vector:", context_vec_2)
 
 torch.manual_seed(123)
 sa_v1 = SelfAttention_v1(d_in, d_out)
-print(sa_v1(inputs))
+#print(sa_v1(inputs))
 
-# Manual for second query
-attn_scores_2 = inputs @ inputs[1]  # shape: (6,)
-attn_weights_2 = torch.softmax(attn_scores_2, dim=0)
-context_vec_2 = torch.sum(attn_weights_2.unsqueeze(1) * inputs, dim=0)
-
-# Matrix version
-attn_scores = inputs @ inputs.T     # shape: (6, 6)
-attn_weights = torch.softmax(attn_scores, dim=1)
-all_context_vecs = attn_weights @ inputs
-
-# Compare
-print(torch.allclose(context_vec_2, all_context_vecs[1]))
+#page 142
