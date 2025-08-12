@@ -5,6 +5,7 @@ from GPTDataSetV1 import GPTDataSetV1
 from SelfAttention_V1 import SelfAttention_v1
 from SelfAttention_V2 import SelfAttention_v2
 from CausalAttention import CausalAttention
+from MultiHeadAttentionWrapper import MultiHeadAttentionWrapper
 from torch.utils.data import DataLoader
 from importlib.metadata import version
 import tiktoken
@@ -214,3 +215,13 @@ ca=CausalAttention(d_in, d_out, context_length, 0.0)
 context_vecs = ca(batch)
 print("Context Vectors Shape:", context_vecs.shape)
 
+#Try and extend to multi-head attention
+
+torch.manual_seed(123)
+context_length = batch.shape[1]
+d_in, d_out = 3, 2
+mha = MultiHeadAttentionWrapper(d_in, d_out, context_length, 0.0, num_heads=2)
+context_vecs = mha(batch)
+
+print(context_vecs)
+print("Context_vecs shape", context_vecs.shape)
