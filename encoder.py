@@ -3,6 +3,7 @@ import re
 import torch
 from GPTDataSetV1 import GPTDataSetV1
 from SelfAttention_V1 import SelfAttention_v1
+from SelfAttention_V2 import SelfAttention_v2
 from torch.utils.data import DataLoader
 from importlib.metadata import version
 import tiktoken
@@ -159,3 +160,46 @@ print("Context Vector:", context_vec_2)
 torch.manual_seed(123)
 sa_v1 = SelfAttention_v1(d_in, d_out)
 print(sa_v1(inputs))
+
+torch.manual_seed(789)
+sa_v2 = SelfAttention_v2(d_in, d_out)
+print(sa_v2(inputs))
+
+#now we want to hide future words with causal attention
+#we want it to only consider words before the current position
+queries = sa_v2.W_query(inputs)
+keys = sa_v2.W_key(inputs)
+attn_scores = queries @ keys.T
+attn_weights = torch.softmax(attn_scores / keys.shape[-1]**0.5, dim=-1)
+print(attn_weights)
+
+context_length = attn_scores.shape[0]
+mask_simple = torch.tril(torch.ones(context_length, context_length)) #lower triangular matrix
+print(mask_simple)
+
+masked_simple = attn_weights * mask_simple #apply the mask to the attention scores (also recall that matrix multiplication is NOT commutative)
+print(masked_simple)
+
+#normalize the masked attention weights
+row_sums = masked_simple.sum(dim=-1, keepdim=True)
+masked_simple_norm = masked_simple / row_sums
+print(masked_simple_norm)
+
+#we can implement this more efficient masking trick with creating a mask of 1s above the diagonal and then replacing it with negative infinity.
+mask = torch.triu(torch.ones(context_length, context_length), diagonal = 1)
+masked = attn_scores.masked_fill(mask.bool(), -torch.inf) #replace the upper triangular part with -inf
+print(masked)
+
+#apply softmax to these masked values
+attn_weights = torch.softmax(masked / keys.shape[-1] ** 0.5, dim=-1) #scaled dot product attention
+print(attn_weights)
+
+#Mask the additional weights with dropout
+#Technique of dropping randomly selected neurons during training to prevent overfitting
+torch.manual_seed(123)
+dropout = torch.nn.Dropout(0.5) #dropout with 50% probability (50% probability of dropping it to zero)
+example = torch.ones(6, 6)
+print(dropout(example))
+
+torch.manual_seed(123)
+print(dropout(attn_weights))
