@@ -9,6 +9,8 @@ from MultiHeadAttentionWrapper import MultiHeadAttentionWrapper
 from MultiHeadAttention import MultiHeadAttention
 from torch.utils.data import DataLoader
 from importlib.metadata import version
+import torch.nn as nn
+from DummyGPTModel import DummyGPTModel, DummyTransformerBlock, DummyLayerNorm
 import tiktoken
 
 url = ("https://raw.githubusercontent.com/rasbt/"
@@ -252,3 +254,58 @@ mha = MultiHeadAttention(d_in, d_out, context_length, 0.0, num_heads=2)
 context_vecs = mha(batch)
 print(context_vecs)
 print("context_vecs.shape", context_vecs.shape)
+
+GPT_CONFIG_124M = {
+    "vocab_size": 50257,
+    "context_length": 1024,
+    "emb_dim": 768,         #embedding dimension
+    "n_heads": 12,          #Number of Attention Heads
+    "n_layers": 12,         
+    "drop_rate": 0.1,       #DropoutRate
+    "qkv_bias": False       #Query Key Value Bias
+
+
+}
+
+tokenizer = tiktoken.get_encoding("gpt2")
+batch = []
+txt1 = "Every effort moves you"
+txt2 = "Everyday holds a"
+
+batch.append(torch.tensor(tokenizer.encode(txt1)))
+batch.append(torch.tensor(tokenizer.encode(txt2)))
+batch = torch.stack(batch, dim=0)
+print(batch)
+
+#initialize the dummygpt model
+torch.manual_seed(123)
+model = DummyGPTModel(GPT_CONFIG_124M)
+logits = model(batch)
+print("Output Shape:", logits.shape)
+print(logits)
+
+#Normalizing Activations with layer normalization
+
+#adjust the outputs of a NN to have a mean of 0 and a variance of 1. This is typically applied before and after the multi-head attention module 
+
+torch.manual_seed(123)
+batch_example = torch.randn(2, 5) #2 training examples with 5 dimensions each
+layer = nn.Sequential(nn.Linear(5, 6), nn.ReLU())
+out = layer(batch_example)
+print(out)
+
+#Check the mean and variance first before we apply layer normalization
+mean = out.mean(dim =-1, keepdim=True)
+var = out.var(dim=-1, keepdim=True)
+print("Mean", mean)
+print("variance", var)
+
+#apply layer normalization (mean of 0 and variance of 1)
+
+out_norm = (out - mean) / torch.sqrt(var)
+mean = out_norm.mean(dim=-1, keepdim=True)
+var = out_norm.var(dim=-1, keepdim=True)
+print("Normalized layer outputs:\n", out_norm)
+torch.set_printoptions(sci_mode=False)
+print("Mean:\n", mean)
+print("Variance:\n", var)
