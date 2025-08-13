@@ -10,6 +10,7 @@ from MultiHeadAttention import MultiHeadAttention
 from torch.utils.data import DataLoader
 from importlib.metadata import version
 import torch.nn as nn
+from LayerNorm import LayerNorm
 from DummyGPTModel import DummyGPTModel, DummyTransformerBlock, DummyLayerNorm
 import tiktoken
 
@@ -309,3 +310,10 @@ print("Normalized layer outputs:\n", out_norm)
 torch.set_printoptions(sci_mode=False)
 print("Mean:\n", mean)
 print("Variance:\n", var)
+
+ln = LayerNorm(emb_dim=5)
+out_ln = ln(batch_example)
+mean = out_ln.mean(dim=-1, keepdim=True)
+var = out_ln.var(dim=-1, unbiased=False, keepdim=True)
+print("Mean", mean)
+print("Variance", var)
