@@ -4,6 +4,7 @@ import torch
 from GPTDataSetV1 import GPTDataSetV1
 from SelfAttention_V1 import SelfAttention_v1
 from SelfAttention_V2 import SelfAttention_v2
+from ExampleDeepNeuralNetwork import ExampleDeepNeuralNetwork
 from CausalAttention import CausalAttention
 from MultiHeadAttentionWrapper import MultiHeadAttentionWrapper
 from MultiHeadAttention import MultiHeadAttention
@@ -14,6 +15,7 @@ from LayerNorm import LayerNorm
 from DummyGPTModel import DummyGPTModel, DummyTransformerBlock, DummyLayerNorm
 import tiktoken
 from GELU import GELU
+from FeedForward import FeedForward
 import matplotlib.pyplot as plt
 
 url = ("https://raw.githubusercontent.com/rasbt/"
@@ -322,7 +324,8 @@ print("Variance", var)
 
 gelu, relu = GELU(), nn.ReLU()
 
-x = torch.linspace(-3, 3, 100)
+
+'''x = torch.linspace(-3, 3, 100)
 y_gelu, y_relu = gelu(x), relu(x)
 plt.figure(figsize=(8, 3))
 for i, (y, label) in enumerate(zip([y_gelu, y_relu], ["GELU", "ReLU"]), 1):
@@ -334,6 +337,34 @@ for i, (y, label) in enumerate(zip([y_gelu, y_relu], ["GELU", "ReLU"]), 1):
     plt.grid(True)
 
 plt.tight_layout()
-plt.show()
+plt.show()'''
 
 #if we look at these graphs, GELU can lead to better optimziation for training.
+
+ffn = FeedForward(GPT_CONFIG_124M)
+x = torch.rand(2, 3, 768)
+out = ffn(x)
+print(out.shape)
+
+layer_sizes = [3, 3, 3, 3, 3, 1]
+sample_input = torch.tensor([[1., 0., -1.]])
+torch.manual_seed(123)
+model_without_shortcut = ExampleDeepNeuralNetwork(layer_sizes, use_shortcut=False)
+
+def print_gradients(model, x):
+    output = model(x)
+    target = torch.tensor([[0.]])
+
+    loss = nn.MSELoss()
+    loss = loss(output, target)
+
+    loss.backward()
+
+    for name, param in model.named_parameters():
+        if 'weight' in name:
+            print(f"{name} has gradient mean of {param.grad.abs().mean().item()}")
+
+print_gradients(model_without_shortcut, sample_input)
+torch.manual_seed(123)
+model_with_shortcut = ExampleDeepNeuralNetwork(layer_sizes, use_shortcut=True)
+print_gradients(model_with_shortcut, sample_input)
